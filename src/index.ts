@@ -2,9 +2,11 @@ import { AppDataSource } from "./data-source"
 import productsRoutes from "./routes/products.routes"
 
 const express = require('express')
+var cors = require('cors')
 const app = express()
-const port = 3000
+const port = process.env.PORT
 
+app.use(cors())
 app.use(express.json())
 
 app.use("/product", productsRoutes)
