@@ -100,6 +100,13 @@ class ProductController {
         try {
             const product = await this.ProductRepository.find()
 
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Products not found"
+                })
+            }
+
             return res.status(200).json({
                 success: true,
                 data: {
@@ -115,11 +122,18 @@ class ProductController {
     }
 
     getOneProduct = async (req: Request, res: Response) => {
-        const productId = req.params.id
         try {
+            const productId = req.params.id
             const product = await this.ProductRepository.findOne({
                 where: {id: productId}
             })
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Product not found"
+                })
+            }
 
             return res.status(200).json({
                 success: true,
