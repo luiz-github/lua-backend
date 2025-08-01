@@ -1,24 +1,38 @@
 import { Request, Response } from "express"
 import UserService from "../services/user.service"
+import AuthService from "../services/auth.service"
 
 export default class UserController {
     private UserService: UserService
+    private AuthService: AuthService
 
     constructor() {
         this.UserService = new UserService()
+        this.AuthService = new AuthService()
     }
 
     createUser = async (req: Request, res: Response) => {
         try {
             const { name, email, password } = req.body
-            
             if (!name || !email || !password) {
                 return res.status(400).json({
                     success: false,
                     message: "All fields must be completed"
                 })
             }
-            await this.UserService.createUser(name, email, password)
+
+            const user = await this.UserService.getUserByEmail(email)
+            if (user) {
+                return res.status(409).json({
+                    success: false,
+                    message: "User already exists"
+                })
+            }
+
+            const userId = await this.UserService.createUser(name, email, password)          
+            const token = this.AuthService.authenticate(userId, name)
+
+            res.cookie("Token", token, { maxAge: 60 * 60 * 24 * 7, httpOnly: true })
 
             return res.status(201).json({
                 success: true,
