@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert } from "typeorm"
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  BeforeInsert, 
+  DeleteDateColumn 
+} from "typeorm"
 import * as bcrypt from 'bcryptjs';
 
 @Entity()
@@ -14,6 +20,9 @@ export class User {
 
   @Column({ select: false })
   password: string;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @BeforeInsert()
   async hashPassword() {
