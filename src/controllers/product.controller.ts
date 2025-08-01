@@ -1,13 +1,11 @@
 import { Request, Response } from "express"
-import { Repository } from "typeorm";
-import { AppDataSource } from "../data-source";
-import { Product } from "../entity/Product";
+import ProductService from "../services/product.service"
 
 class ProductController {
-    private ProductRepository: Repository<Product>
+    private ProductService: ProductService
 
     constructor() {
-        this.ProductRepository = AppDataSource.getRepository(Product)
+        this.ProductService = new ProductService()
     }
 
     createProduct = async (req: Request, res: Response) => {
@@ -21,23 +19,17 @@ class ProductController {
                 })
           }
 
-          const newProduct = this.ProductRepository.create({
-            name: name,
-            description: description,
-            value: value
-          })
+          await this.ProductService.createProduct(name, description, value)
 
-          await this.ProductRepository.save(newProduct)
-
-          return res.status(200).json({
+          return res.status(201).json({
                 success: true,
                 message: "Product created with success"       
           })
 
         } catch (error) {
-            return res.status(400).json({
+            return res.status(500).json({
                 success: false,
-                message: "Error while creating product"
+                message: "Internal server error"
             })
         }
     }
@@ -45,11 +37,8 @@ class ProductController {
     updateProduct = async (req: Request, res: Response) => {
         try {
             const { name, description, value } = req.body
-
-            const productId = Number(req.params.id)          
-            const product = await this.ProductRepository.findOne({
-                where: {id: productId}
-            })
+            const productId = req.params.id       
+            const product = await this.ProductService.getProductById(productId)
 
             if (!product) {
                 return res.status(404).json({
@@ -58,12 +47,8 @@ class ProductController {
                 })  
             }
 
-            await this.ProductRepository.update(productId, {
-                name: name || (await product).name,
-                description: description || (await product).description,
-                value: value || (await product).value
-            })
-    
+            await this.ProductService.updateProduct(productId, name, description, value)
+
             return res.status(200).json({
                 success: true,
                 message: "Product updated with success"
@@ -79,9 +64,9 @@ class ProductController {
 
     deleteProduct = async (req: Request, res: Response) => {
         try {
-            const productId = Number(req.params.id)
+            const productId = req.params.id
             
-            await this.ProductRepository.softDelete(productId)
+            await this.ProductService.deleteProduct(productId)
 
             return res.status(200).json({
                 success: true,
@@ -98,7 +83,7 @@ class ProductController {
 
     getProduct = async (req: Request, res: Response) => {
         try {
-            const product = await this.ProductRepository.find()
+            const product = await this.ProductService.getAllProduct()
 
             if (!product) {
                 return res.status(404).json({
@@ -121,12 +106,10 @@ class ProductController {
         }
     }
 
-    getOneProduct = async (req: Request, res: Response) => {
+    getProductById = async (req: Request, res: Response) => {
         try {
             const productId = req.params.id
-            const product = await this.ProductRepository.findOne({
-                where: {id: productId}
-            })
+            const product = await this.ProductService.getProductById(productId)
 
             if (!product) {
                 return res.status(404).json({
