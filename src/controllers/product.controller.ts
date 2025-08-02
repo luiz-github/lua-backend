@@ -65,7 +65,7 @@ class ProductController {
     deleteProduct = async (req: Request, res: Response) => {
         try {
             const productId = Number(req.params.id)
-            
+
             await this.ProductService.deleteProduct(productId)
 
             return res.status(200).json({
