@@ -37,7 +37,7 @@ class ProductController {
     updateProduct = async (req: Request, res: Response) => {
         try {
             const { name, description, value } = req.body
-            const productId = req.params.id       
+            const productId = Number(req.params.id)      
             const product = await this.ProductService.getProductById(productId)
 
             if (!product) {
@@ -64,7 +64,7 @@ class ProductController {
 
     deleteProduct = async (req: Request, res: Response) => {
         try {
-            const productId = req.params.id
+            const productId = Number(req.params.id)
             
             await this.ProductService.deleteProduct(productId)
 
@@ -108,7 +108,7 @@ class ProductController {
 
     getProductById = async (req: Request, res: Response) => {
         try {
-            const productId = req.params.id
+            const productId = Number(req.params.id)
             const product = await this.ProductService.getProductById(productId)
 
             if (!product) {
