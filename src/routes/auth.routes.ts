@@ -5,8 +5,7 @@ const router = Router();
 const authController = new AuthController();
 
 // API routes
-router.post("/signIn", authController.signIn)
-router.post("/signUp", authController.signUp)
-router.post("/logout", authController.logout)
+router.post("/signIn", authController.signInUserController)
+router.post("/signUp", authController.signUpUserController)
 
 export default router;

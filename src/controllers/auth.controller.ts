@@ -1,7 +1,8 @@
 import { Request, Response } from "express"
 import AuthService from "../services/auth.service"
 import UserService from "../services/user.service"
-const bcrypt = require('bcryptjs');
+import { SignInDTO } from "../dto/auth.dto"
+import { UserDTO } from "../dto/user.dto"
 
 export default class AuthController {
     private AuthService: AuthService
@@ -12,33 +13,14 @@ export default class AuthController {
         this.UserService = new UserService()
     }
 
-    signIn = async (req: Request, res: Response) => {
+    signInUserController = async (req: Request, res: Response) => {
         try {
-            const { email, password } = req.body
-    
-            const user = await this.UserService.getUserByEmail(email)
-            if (!user) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User doesn't exists"
-                })
+            const userCredentials: SignInDTO = { 
+                email: req.body.email, 
+                password: req.body.password 
             }
-            const isValid = await bcrypt.compare(password, user.password);
-    
-            if (!isValid) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid credentials"
-                })
-            }
-    
-            const token = await this.AuthService.authenticate(user.id, user.name)
-            this.createAuthCookie(token, res)
-    
-            return res.status(200).json({
-                success: true,
-                message: "User signed in with success"
-            })
+            const serviceResponse = await this.AuthService.signInUserService(userCredentials)
+            return res.status(serviceResponse.status).json(serviceResponse)
         } catch (error) {
             return res.status(500).json({
                 success: false,
@@ -47,68 +29,20 @@ export default class AuthController {
         }
     }
 
-    signUp = async (req: Request, res: Response) => {
+    signUpUserController = async (req: Request, res: Response) => {
         try {
-            const { name, email, password } = req.body
-            if (!name || !email || !password) {
-                return res.status(400).json({
-                    success: false,
-                    message: "All fields must be completed"
-                })
+            const user: UserDTO = {
+                name: req.body.name,
+                email: req.body.email,
+                password: req.body.password
             }
-
-            const user = await this.UserService.getUserByEmail(email)
-            if (user) {
-                return res.status(409).json({
-                    success: false,
-                    message: "User already exists"
-                })
-            }
-
-            const userId = await this.UserService.createUser(name, email, password)          
-            const token = this.AuthService.authenticate(userId, name)
-
-            this.createAuthCookie(token, res)
-
-            return res.status(201).json({
-                success: true,
-                message: "User created with success",
-            })
-
+            const response = await this.UserService.createUser(user)        
+            return res.status(response.status).json(response)
         } catch (error) {
             return res.status(500).json({
                 success: false,
                 message: "Internal server error",
             })
         }
-    }
-
-    logout = async (req: Request, res: Response) => {
-        try {
-            const token = req.cookies.Token
-            if (!token) {
-                return res.status(400).json({
-                    success: false,
-                    message: "There isn't any token",
-                })
-            }
-            res.clearCookie("Token")
-            return res.status(200).json({
-                success: true,
-                message: "User loged out",
-            })
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Internal server error",
-            })
-        }
-    }
-
-    private createAuthCookie(token: string, res: Response) {
-        return res.cookie("Token", token, {
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            httpOnly: true 
-        })
     }
 }

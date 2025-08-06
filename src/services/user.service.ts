@@ -1,25 +1,35 @@
 import { User } from "../entity/User";
 import { AppDataSource } from "../data-source";
 import { Repository } from "typeorm";
-import AuthService from "./auth.service";
+import { UserDTO } from "../dto/user.dto";
+import { StatusCodes as status } from 'http-status-codes'
 
 export default class UserService {
     private UserRepository: Repository<User>
-    private auth: AuthService
+    private UserService: UserService
 
     constructor() {
         this.UserRepository =  AppDataSource.getRepository(User)
-        this.auth = new AuthService()
+        this.UserService = new UserService()
     }
 
-    async createUser(name: string, email: string, password: string) {
-        const newUser = this.UserRepository.create({
-            name: name,
-            email: email,
-            password: password
-        })
-        const user = await this.UserRepository.save(newUser)
-        return user.id
+    async createUser(user: UserDTO) {
+        try {
+            if (!user.name || !user.email || !user.password) return { status: status.BAD_REQUEST, message: "All fields must be completed" }
+    
+            const userExists = await this.UserService.getUserByEmail(user.email)
+            if (userExists) return { status: status.CONFLICT, message: "User already exists" }
+    
+            const newUser = this.UserRepository.create({
+                name: user.name,
+                email: user.email,
+                password: user.password
+            })
+            const savedUser = await this.UserRepository.save(newUser)
+            return { status: status.OK, message: "User registered with success", data: { userId: savedUser.id} }
+        } catch (error) {
+            return { status: status.INTERNAL_SERVER_ERROR, message: error }
+        }
     }
 
     async updateUser(userId: number, name: string, email: string) {
