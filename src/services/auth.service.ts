@@ -3,6 +3,10 @@ import { StatusCodes as status } from 'http-status-codes'
 import UserService from "./user.service"
 import bcrypt = require("bcryptjs/umd/types")
 import { SignInDTO } from "../dto/auth.dto"
+import { UserDTO } from "../dto/user.dto"
+import { User } from "../entity/User"
+import { AppDataSource } from "../data-source"
+import { Repository } from "typeorm"
 
 interface PayloadJWT {
     id: number,
@@ -11,10 +15,12 @@ interface PayloadJWT {
 
 export default class AuthService {
     private privateKey: string
+    private UserRepository: Repository<User>
     private UserService: UserService
 
     constructor() {
         this.privateKey = "private"
+        this.UserRepository =  AppDataSource.getRepository(User)
         this.UserService = new UserService()
     }
 
@@ -42,6 +48,25 @@ export default class AuthService {
                 status: status.INTERNAL_SERVER_ERROR,
                 message: error
             }
+        }
+    }
+
+    async signUpUserService(user: UserDTO) {
+        try {
+            if (!user.name || !user.email || !user.password) return { status: status.BAD_REQUEST, message: "All fields must be completed" }
+    
+            const userExists = await this.UserService.getUserByEmail(user.email)
+            if (userExists) return { status: status.CONFLICT, message: "User already exists" }
+    
+            const newUser = this.UserRepository.create({
+                name: user.name,
+                email: user.email,
+                password: user.password
+            })
+            const savedUser = await this.UserRepository.save(newUser)
+            return { status: status.OK, message: "User registered with success", data: { userId: savedUser.id} }
+        } catch (error) {
+            return { status: status.INTERNAL_SERVER_ERROR, message: error }
         }
     }
 

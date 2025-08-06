@@ -6,11 +6,9 @@ import { UserDTO } from "../dto/user.dto"
 
 export default class AuthController {
     private AuthService: AuthService
-    private UserService: UserService
 
     constructor() {
         this.AuthService = new AuthService()
-        this.UserService = new UserService()
     }
 
     signInUserController = async (req: Request, res: Response) => {
@@ -36,7 +34,7 @@ export default class AuthController {
                 email: req.body.email,
                 password: req.body.password
             }
-            const response = await this.UserService.createUser(user)        
+            const response = await this.AuthService.signUpUserService(user)        
             return res.status(response.status).json(response)
         } catch (error) {
             return res.status(500).json({
